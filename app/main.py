@@ -1,6 +1,13 @@
 from fastapi import FastAPI
-from app.routers import ia_results
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-app.include_router(ia_results.router)
+# Permitir peticiones desde cualquier origen (como Bolt.new)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # O usa ["https://bolt.new"] para limitarlo solo a Bolt
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
