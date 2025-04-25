@@ -2,11 +2,10 @@ from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 
-# 1. Crear la instancia
 app = FastAPI()
 
-# 2. Habilitar CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,9 +14,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 3. Definir el endpoint después de crear app
 @app.get("/analizar")
-def analizar(keyword: str = Query(...), dominio: str = Query(...)):
+def analizar(keyword: str = Query(...), dominio: str = Query(None)):
     url = f"https://www.perplexity.ai/search?q={keyword.replace(' ', '+')}"
     headers = {
         "User-Agent": "Mozilla/5.0"
@@ -25,11 +23,28 @@ def analizar(keyword: str = Query(...), dominio: str = Query(...)):
 
     response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.text, "html.parser")
-    enlaces = [a["href"] for a in soup.find_all("a", href=True) if dominio in a["href"]]
+    enlaces = [a["href"] for a in soup.find_all("a", href=True)]
 
-    return {
-        "keyword": keyword,
-        "dominio": dominio,
-        "aparece": len(enlaces) > 0,
-        "enlaces_encontrados": enlaces
-    }
+    if dominio:
+        enlaces_filtrados = [link for link in enlaces if dominio in link]
+        aparece = len(enlaces_filtrados) > 0
+        return {
+            "keyword": keyword,
+            "dominio": dominio,
+            "aparece": aparece,
+            "enlaces_encontrados": list(set(enlaces_filtrados))
+        }
+    else:
+        dominios = {}
+        for link in enlaces:
+            try:
+                domain = urlparse(link).netloc
+                if domain:
+                    dominios.setdefault(domain, []).append(link)
+            except:
+                continue
+
+        return {
+            "keyword": keyword,
+            "dominios_encontrados": dominios
+        }
