@@ -1,13 +1,25 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# Permitir peticiones desde cualquier origen (como Bolt.new)
+# Habilitar CORS para permitir el acceso desde Bolt.new
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # O usa ["https://bolt.new"] para limitarlo solo a Bolt
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/analizar")
+def analizar(keyword: str = Query(...), dominio: str = Query(None)):
+    return {
+        "keyword": keyword,
+        "dominio": dominio,
+        "aparece": True,
+        "enlaces_encontrados": [
+            "https://ejemplo.com/resultado1",
+            "https://ejemplo.com/resultado2"
+        ]
+    }
