@@ -16,14 +16,15 @@ app.add_middleware(
 
 @app.get("/analizar")
 def analizar(keyword: str = Query(...), dominio: str = Query(None)):
-    url = f"https://www.perplexity.ai/search?q={keyword.replace(' ', '+')}"
+    query = keyword.replace(" ", "+")
+    url = f"https://www.bing.com/search?q={query}"
     headers = {
         "User-Agent": "Mozilla/5.0"
     }
 
     response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.text, "html.parser")
-    enlaces = [a["href"] for a in soup.find_all("a", href=True)]
+    enlaces = [a["href"] for a in soup.select("li.b_algo h2 a[href]")]
 
     if dominio:
         enlaces_filtrados = [link for link in enlaces if dominio in link]
@@ -32,18 +33,14 @@ def analizar(keyword: str = Query(...), dominio: str = Query(None)):
             "keyword": keyword,
             "dominio": dominio,
             "aparece": aparece,
-            "enlaces_encontrados": list(set(enlaces_filtrados))
+            "enlaces_encontrados": enlaces_filtrados
         }
     else:
         dominios = {}
         for link in enlaces:
-            try:
-                domain = urlparse(link).netloc
-                if domain:
-                    dominios.setdefault(domain, []).append(link)
-            except:
-                continue
-
+            domain = urlparse(link).netloc
+            if domain:
+                dominios.setdefault(domain, []).append(link)
         return {
             "keyword": keyword,
             "dominios_encontrados": dominios
