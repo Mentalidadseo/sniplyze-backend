@@ -45,3 +45,7 @@ def analizar(keyword: str = Query(...), dominio: str = Query(None)):
             "keyword": keyword,
             "dominios_encontrados": dominios
         }
+
+@app.get("/")
+def root():
+    return {"status": "Snipelize backend running"}
